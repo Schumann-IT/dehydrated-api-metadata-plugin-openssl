@@ -23,14 +23,14 @@ type OpensslPlugin struct {
 }
 
 // Initialize implements the plugin.Plugin interface
-func (p *OpensslPlugin) Initialize(ctx context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
+func (p *OpensslPlugin) Initialize(_ context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
 	p.logger.Debug("Initialize called")
 	p.config.FromProto(req.Config)
 	return &proto.InitializeResponse{}, nil
 }
 
 // GetMetadata implements the plugin.Plugin interface
-func (p *OpensslPlugin) GetMetadata(ctx context.Context, req *proto.GetMetadataRequest) (*proto.GetMetadataResponse, error) {
+func (p *OpensslPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataRequest) (*proto.GetMetadataResponse, error) {
 	p.logger.Debug("GetMetadata called")
 
 	// Create a new Metadata for the response
@@ -89,7 +89,7 @@ func (p *OpensslPlugin) GetMetadata(ctx context.Context, req *proto.GetMetadataR
 }
 
 // Close implements the plugin.Plugin interface
-func (p *OpensslPlugin) Close(ctx context.Context, req *proto.CloseRequest) (*proto.CloseResponse, error) {
+func (p *OpensslPlugin) Close(_ context.Context, _ *proto.CloseRequest) (*proto.CloseResponse, error) {
 	p.logger.Debug("Close called")
 	return &proto.CloseResponse{}, nil
 }
