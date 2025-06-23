@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +13,13 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"
 	"github.com/schumann-it/dehydrated-api-go/plugin/server"
+)
+
+var (
+	// These variables are set by GoReleaser during build
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildTime = "unknown"
 )
 
 // OpensslPlugin is a simple plugin implementation
@@ -60,24 +67,20 @@ func (p *OpensslPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataReq
 	var errs []string
 	for metadataKey, filename := range certFiles {
 		filePath := filepath.Join(domainDir, filename)
-		var value interface{}
-		var err error
+		var value any
 
 		switch metadataKey {
 		case "key":
-			key := internal.NewKey(filePath)
-			value, err = toMap(key)
+			value = internal.NewKey(filePath)
 		default:
-			cert := internal.NewCertificate(filePath)
-			value, err = toMap(cert)
+			value = internal.NewCertificate(filePath)
 		}
 
+		err := metadata.SetMap(metadataKey, value)
 		if err != nil {
 			errs = append(errs, fmt.Sprintf("failed to process %s: %v", filename, err))
 			continue
 		}
-
-		metadata.Set(metadataKey, value)
 	}
 
 	// Add errors to metadata if any occurred
@@ -95,6 +98,15 @@ func (p *OpensslPlugin) Close(_ context.Context, _ *proto.CloseRequest) (*proto.
 }
 
 func main() {
+	// Parse command line flags
+	versionFlag := flag.Bool("version", false, "Print version information")
+	flag.Parse()
+
+	// Handle version flag
+	if *versionFlag {
+		printVersionInfoAndExit()
+	}
+
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "openssl-plugin",
 		Level:  hclog.Trace,
@@ -109,17 +121,8 @@ func main() {
 	server.NewPluginServer(plugin).Serve()
 }
 
-// toMap converts a struct to a map[string]interface{} using JSON marshaling
-func toMap(v interface{}) (map[string]interface{}, error) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal: %w", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %w", err)
-	}
-
-	return result, nil
+// printVersionInfoAndExit prints the version information as a formatted string and exists the program
+func printVersionInfoAndExit() {
+	fmt.Printf("Version: %s\nCommit: %s\nBuild Time: %s\n", Version, Commit, BuildTime)
+	os.Exit(0)
 }

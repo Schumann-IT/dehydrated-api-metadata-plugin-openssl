@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewKey_ValidRSAKey(t *testing.T) {
 	// Create a temporary file with a valid RSA key
 	tempDir, err := os.MkdirTemp("", "test-keys")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	keyPath := filepath.Join(tempDir, "test.key")
@@ -21,34 +21,33 @@ MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
 NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
 -----END PRIVATE KEY-----`
 
-	err = os.WriteFile(keyPath, []byte(keyContent), 0644)
-	assert.NoError(t, err)
+	err = os.WriteFile(keyPath, []byte(keyContent), 0600)
+	require.NoError(t, err)
 
 	key := NewKey(keyPath)
-	assert.NotNil(t, key)
-	assert.Equal(t, keyPath, key.File)
-	// Note: The actual type/size values will depend on the test key data
+	require.NotNil(t, key)
+	require.Equal(t, keyPath, key.File)
 }
 
 func TestNewKey_NonExistentFile(t *testing.T) {
 	key := NewKey("nonexistent.key")
-	assert.NotNil(t, key)
-	assert.Contains(t, key.Error, "failed to read")
+	require.NotNil(t, key)
+	require.Contains(t, key.Error, "failed to read")
 }
 
 func TestNewKey_InvalidKey(t *testing.T) {
 	// Create a temporary file with invalid content
 	tempDir, err := os.MkdirTemp("", "test-keys")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	keyPath := filepath.Join(tempDir, "invalid.key")
-	err = os.WriteFile(keyPath, []byte("invalid content"), 0644)
-	assert.NoError(t, err)
+	err = os.WriteFile(keyPath, []byte("invalid content"), 0600)
+	require.NoError(t, err)
 
 	key := NewKey(keyPath)
-	assert.NotNil(t, key)
-	assert.Contains(t, key.Error, "failed to decode PEM block")
+	require.NotNil(t, key)
+	require.Contains(t, key.Error, "failed to decode PEM block")
 }
 
 func TestKey_Analyze(t *testing.T) {
@@ -57,8 +56,8 @@ func TestKey_Analyze(t *testing.T) {
 	}
 
 	err := key.analyze()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to read")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to read")
 }
 
 func TestKey_JSONTags(t *testing.T) {
@@ -70,10 +69,10 @@ func TestKey_JSONTags(t *testing.T) {
 	}
 
 	// Verify that all fields have proper JSON tags
-	assert.NotEmpty(t, key.File)
-	assert.NotEmpty(t, key.Type)
-	assert.Greater(t, key.Size, 0)
-	assert.NotEmpty(t, key.Error)
+	require.NotEmpty(t, key.File)
+	require.NotEmpty(t, key.Type)
+	require.Positive(t, key.Size)
+	require.NotEmpty(t, key.Error)
 }
 
 func TestKey_SupportedKeyTypes(t *testing.T) {
@@ -95,8 +94,8 @@ func TestKey_SupportedKeyTypes(t *testing.T) {
 				Type: tc.keyType,
 				Size: tc.keySize,
 			}
-			assert.Equal(t, tc.expected, key.Type)
-			assert.Greater(t, key.Size, 0)
+			require.Equal(t, tc.expected, key.Type)
+			require.Positive(t, key.Size)
 		})
 	}
 }

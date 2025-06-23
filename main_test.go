@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -24,8 +25,8 @@ func TestOpensslPlugin_Initialize(t *testing.T) {
 	}
 
 	resp, err := plugin.Initialize(context.Background(), req)
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
 }
 
 func TestOpensslPlugin_GetMetadata_NonExistentDirectory(t *testing.T) {
@@ -44,31 +45,215 @@ func TestOpensslPlugin_GetMetadata_NonExistentDirectory(t *testing.T) {
 	}
 
 	resp, err := plugin.GetMetadata(context.Background(), req)
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
 
 	// Check for error in metadata
-	assert.NotNil(t, resp.Error)
-	assert.Contains(t, resp.Error, "domain directory does not exist")
+	require.NotNil(t, resp.Error)
+	require.Contains(t, resp.Error, "domain directory does not exist")
 }
 
 func TestOpensslPlugin_GetMetadata_ValidDirectory(t *testing.T) {
 	// Create a temporary directory with test certificates
-	tempDir, err := os.MkdirTemp("", "test-certs")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	certDir, err := os.MkdirTemp("", "test-certs")
+	require.NoError(t, err)
+	defer os.RemoveAll(certDir)
+
+	err = os.Mkdir(filepath.Join(certDir, "test.example.com"), 0755)
+	require.NoError(t, err)
 
 	// Create test certificate files
 	certFiles := map[string]string{
-		"privkey.pem":   "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu\nNMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ\n-----END PRIVATE KEY-----\n",
-		"cert.pem":      "-----BEGIN CERTIFICATE-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu\nNMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ\n-----END CERTIFICATE-----\n",
-		"chain.pem":     "-----BEGIN CERTIFICATE-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu\nNMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ\n-----END CERTIFICATE-----\n",
-		"fullchain.pem": "-----BEGIN CERTIFICATE-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj\nMzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu\nNMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ\n-----END CERTIFICATE-----\n",
+		"privkey.pem": `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA2toFxdqjZr6FfoeEcVANA2fnWgF23nxvsZ3stWRJhfq9o5lt
+njCmswfMWKEfKXBhe47VEWd/e75BxKZMKaZXlhsXMW3ZAf5e0gTOBXv7tXHGgquB
+WvnLr2cZMUv9NpAPYtdVFRasII/LSSzp1E5TrUsh8O+0AuwujdK2FCFdWzwXvHoG
+iQaFWbYAG+9OUx3b5dBEZFyuzV/DNowfNOFDARLWphFomziXCBtiNCFqm8jMMsrp
+Jv+/vZ7rp+QOOx1kXsNld4f1s6cHt+6oLQFhFke/we4BpVESs17RMfeAAVaM/koO
+ohzamjihKtaql2vSebovY1LTWZI50wyXYWRwzwIDAQABAoIBAQDYf1W2pNOAkHj+
+8pDSh55YADGdmFU/Q1o7Gz9PMiaJo8J2VRFbrEU8VjqQctOg6suEr4eX8ArtHwlw
+wBIYIbYDiEkpXMGQd1LV8Greggg/No5qNb+BgBs/KX6Chem4UEroPJyuf/9HNvij
+KwsmO1YL2Id7EaXCPmLPaeM1hswTs0mxHOeBaW/Rbn1TfW44Ewo2fDn/zqXZjhsc
+Tm04nv8lj5cIzkGlV7VeQM2R4HWCTb/Sc9dL2M8dUoqpijV3LvjxW3BQZuFX9XTy
+aRZ5OF5BrnEN9WJMgn84PDIrOPytBUT9cfO7fArOiBtxjPU0qDLesaDxZOAXpMDw
+PEXVA+YBAoGBAPq9ve6dlyqbcxVUcOkH++Jb26a/KzkXziDYBuICtXz43a3H0x5y
+mqOc+NcdD1kzplJwS93kCowZ3nyGvizam90Gu7zOXXw/+hzs8mSP+eK6ENfBfdFI
+quENoqFXmZceKhvCs7TBRROh4ecLUPl/OYF3c9OE/QlVsOXJ/xYjXkxrAoGBAN9x
+D+XDL7qK1zPOVnXC6h2jtP4yreZC4kuFRkaEwq0/fnXZjBWkmYyabm/5055IyQGX
+1hDSkAJmNYkssMBEDtvgKaRxutSvu0VcLYImsz80fPXqTN769L3sxBs6Ol9CsSw7
+Hh4O5qmdCLmkixk049GdC3pPBdy605Wohtjds4YtAoGAK4UpZTQnG7cVd3tLibbg
+Cj7lVgDSULuIBH1aXHoZ5BIR7+rCAwPjQUiqjDO4CUSEtsRU9rNw/TY0PqrocUKU
+UP2tMi0jXsB/+etKexfeSHMBH2GvI9cYCa3jL1vUBb2vk1fs9w+gnLK5Ue/N4zAo
+3AbOrMTlYmxkIs43nzEOWfcCgYBgcsxa8Ers6buE+D8n6+/kxWJ+C2A3MY2+7ZNt
+IydpYyvyMOqf+QHyyEJ9gUhQXbiuQF09u7Y/4uCfCrRs+bO0Q2mWOyVbY1Oh1+0o
+7g2Xbc+20uFFquv0A3yPCC5kKkSSBB62+NWmR0uZ3qXQRp1EQNbQf8XXBqoIQsua
+VvCELQKBgQDtRc4dYaSdfm6Nyl2rwYI1KQbbUF7LvsDugqyYn/Hh/nzIIAEwWstl
+pciNydgLiEYxQGre6xi+VNsX7R6ceh2hCz4OxnILUffRep6QzihVZ9Yh1xeJ6FKJ
+KXfQhCR46gpJAkXQhVAfollJVcPhwASInY9H6KHnC7Xe4GT5TOW7wA==
+-----END RSA PRIVATE KEY-----
+`,
+		"cert.pem": `-----BEGIN CERTIFICATE-----
+MIIDtjCCAZ4CCQDf6RF34BgW+DANBgkqhkiG9w0BAQsFADAfMR0wGwYDVQQDDBRU
+ZXN0IEludGVybWVkaWF0ZSBDQTAeFw0yNTA2MjMxNjMwMzNaFw0yNjA2MjMxNjMw
+MzNaMBsxGTAXBgNVBAMMEHRlc3QuZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDa2gXF2qNmvoV+h4RxUA0DZ+daAXbefG+xney1ZEmF
++r2jmW2eMKazB8xYoR8pcGF7jtURZ397vkHEpkwppleWGxcxbdkB/l7SBM4Fe/u1
+ccaCq4Fa+cuvZxkxS/02kA9i11UVFqwgj8tJLOnUTlOtSyHw77QC7C6N0rYUIV1b
+PBe8egaJBoVZtgAb705THdvl0ERkXK7NX8M2jB804UMBEtamEWibOJcIG2I0IWqb
+yMwyyukm/7+9nuun5A47HWRew2V3h/Wzpwe37qgtAWEWR7/B7gGlURKzXtEx94AB
+Voz+Sg6iHNqaOKEq1qqXa9J5ui9jUtNZkjnTDJdhZHDPAgMBAAEwDQYJKoZIhvcN
+AQELBQADggIBAEuxqCNCyPjZHwAaVnHliVb5qVxjTAxi7+zDKZddfQ7xcVh3j62x
+zBImwiM963fc0SSEUL4WAHGITspujH2saiV5DQQdTraemwlkrbRootwUmFAb8hpl
+iUOMeit6rlVhr3AOI2HMCuDyWXLVrZM83IcqwwQjS+ubIO+wzxTxx9s4SCSjkdeO
+EN8B0B8E1tt8QKM9b7zhxoiham9bRnY7iLXKVk9S+6nPkordx2oeueoRwQfmNyS2
+nkDviymZBGfSr8YQf7r+OqwtwoaH6rnpIA/JliKtXA/zAP5hfEoQQXaPpfZBl27w
+n+mwCxKjiB1P0LccEiR1B0G9Jf36rlTiRCVSa4D6R8wXlVVM+2Dq4C9caM+6gDmr
+tKciwb4sQRRG6t+40frtPHOtxtdI4Qxjf3dVzWBkZwWTQXHGlFrUjbZg3EkhCOJu
+E5kOQCMPmIAUlWqEyiTIioGtY24lrh7BxYx1k8EgwaAl1M+3FbB6VnOSfYTJQ4Ub
+jAABlyp1bjJXvSAlJKrJRPpRl+EUWqa6cOuWgbzlQNQ4t8wlpmZXspTvXvCZ0d7l
+KiFnk+zGGr5K96ISGDN/cs8ZVG1GH5iv6JywfabhRRz0Llx7M/T1Kt9VVd1ncG8V
+h2qNvCOeriRzER6eEkxVfkFn9ihsTF1xhasGrOtT2jOgDxM+YyaZOTYG
+-----END CERTIFICATE-----
+`,
+		"chain.pem": `-----BEGIN CERTIFICATE-----
+MIIEsjCCApoCCQCZOdzxuFNMWjANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxU
+ZXN0IFJvb3QgQ0EwHhcNMjUwNjIzMTYzMDMzWhcNMjYwNjIzMTYzMDMzWjAfMR0w
+GwYDVQQDDBRUZXN0IEludGVybWVkaWF0ZSBDQTCCAiIwDQYJKoZIhvcNAQEBBQAD
+ggIPADCCAgoCggIBAPDURPg5T+9gWDC8sdXeGo265VCy5lIcRIoXTn+RgXA0UB4+
+18wErnYZe+t38EPKuyOHAYA7WQpcDc1/DtPtQe4Z2LLiSn74BGZfHJytPiYq2+rG
+drDOJcJ6x3oznZImBffvcGEAS9U0KUAcnpablMeZdu6kqhNxujjm5hEff1/A9fOi
+81r/mThyfMiM6nzCtC486rMGJNDFa3LdqB4ThhVERaQma6J5ZV5hCbQMpkl9Me6Q
+xnzK7H8jrGK7d2S9W08ogFxkugbtggpsecqXtKHXiZZ7hFAZI6ZtFgY8VS0Rx1yG
+DwrbIH0/GDayVY4I2PqyHD0M9m8oCjGFowW5PiPj7rt+dKprze2dH/SqXUFa8VY8
+w7Hoe5mjxyBTU/Iift9lErheLncX6e8nwRGMwEqCJLrnY1tzBss3vS2xF9EoV4IT
+9JxdUsAITaVub1S0proNv9AA55A05a25am37NEA3Hx/utHDTcCLoaiLpeM4Wy4wk
+V4a8Z7zUsvbcCL3I978gsN44xd7OYPqS/i+mBi+KuwMOA6dnEjPDdUlzcivY8jdx
+YE0+u9FJJGqxV7XmeTBHVtYLFmIiNfhfPwREvGC9P2OiqDh7hLyDmejLmpKAnB3M
+D6ylxgIBCPAQBXCm+Zq7rCQ+jpWciY0POIdNdJURzV6vMpW8BvcPZFx/LWSnAgMB
+AAEwDQYJKoZIhvcNAQELBQADggIBAEgACd5r0TORai2/tAOFtwchqPWDvBI2eZPk
+o5AVGcF42CrThFlXmNtH28IYKbsgoGmGrbHkiQxjWBWZ7pTe4bvJH/bxkuvAU2BG
+XJy/TABOhp7EMtpfzzr5dgw0w85GjIRQnmvx9f/nZah1gB6D3K0ESrLG1fvhIef8
+f04JBn/9zJLo1SEdFNiL+mRVSaudAJmQCqJ/9axwbvRvbfvqm7TS+mBHxihLx6mO
+KfiSB+8fYTDe/LiBrDdCWf4t8POvC3G2ONufhPMh2YrvrUETeduq6SOoXimUORa8
+mplAnGbbTDFjsWDUvNA7dGye7VrPHfalwAMeiU4M9JgP74rDXJWC2LSqldiLucNu
+gS1gjWlALy3walTLJov04mVjgOiLQZd8Tdg0McQgrs7chuw3IXU6zsFVDLz3reNb
+U/FCa53pVQdF2Vbm5tAOySXx2iJyFsz/5CB2B8JwQCkMkBBVjYK8cKdse8MqVXiS
+6lrDI+5Nv5F6ypaMJIp/Yu/OGny1rQ63kdkXt5QKWUvyA8+D16qrhwuDz9SgrfAT
+kJ3DvedIWo+KdYsd0QDtPwtTr+EVzUy7awBoAct96pH+6fke6sCQ5WsjDHH2qmK/
+l6QWRWwEvRWYW8DZuRCDacz1fE5qjdV7WZqGY/KZXz5k2EHu3w43bjrt3vGf70g1
+9IoG5MUz
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIEqjCCApICCQC6g1guHObsqjANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxU
+ZXN0IFJvb3QgQ0EwHhcNMjUwNjIzMTYzMDMzWhcNMjYwNjIzMTYzMDMzWjAXMRUw
+EwYDVQQDDAxUZXN0IFJvb3QgQ0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+AoICAQDL06pL1SsS+bflaz4/wKXfMakbEmFW7TFVZUptrTmAWw7LMx7oRv5lhZ+E
+LtKUrtpZmVbCqCGRxbibY5trCM58gnSnpj8BD9PM87qAoQJdE2DqfhPVHER/h7ZE
+cBsIcOYybgfFxoa07Wj8rSmYXIuPl0USb1v2wqzOluKotV/E3bw8yAfoZbdi/B7X
+WhiGHrattK0uWx+e49ORzhTYeYawTajnPhY3o0a3EnIug9g5+f83u+WYSDPPV+af
+y1hvukX3nZDBqLluiHbR3s+oD75BeqxUAi045vS2CmM9E0iGiTt20YsoZIwi+pbJ
+WabVkFF11TLz81q0AnxmtaejDb1e1R/lJ83yUe05LL4dD4FfE/VdgbGs3CmUxELT
+i+2heUWqw/7vF900uEHr1b1aN2whcMx9a1gy7hJI6KNhC75o1voGiVPV3HnYNjQ1
+ZINQqijzwT4nyEWxrgICvzZlt2L46ifKu0sbRYnxVeE1sG+Pqbo8rAn3tyexI955
+bpEUd8h2/XLs/izc90rNTbvsjVAxoHBcfSOA3HJ7D9/MjY5JsgmbcWIcfTzkFj/W
+DVYLrI2//0iK/589KfF1psfuqKMKvGiIBi3JUgDm95EMFDbWJXBGn1HJZ667ZrSH
+1J1We5FQ5DlaPFcuhye3PE2XlqcncMoNPwIlMGVoR7QZ3NZCKQIDAQABMA0GCSqG
+SIb3DQEBCwUAA4ICAQBYLW8spbVwA11hwXCi+v7JywepxtKLdCsPpjfm8ewHMG/j
+EMePY673gfONv4S5Pwk5ERoNy4W/n5m0S6t0tmtVivezeVT/ReU/tpKuj7iZhOEq
+tSNdL6mMU3FFnIZRXohfxeQqX+BP5g90AuPyQ5F7pCE1YDJOFn/Aadj3vWXQ+XQA
+V+yAk9OOfgqAhreXI3fu1VtuaJhmv9Ig1GhvFtmiW19knPmjzGWKugB0l9gJiPXZ
+CTqOTEsyTJIQbiGzGlo/hn9xoFC7nTw8vSIhrfsp9+pDA3HTo/zERwShsyNJky8g
+pvYdCVB2faP/4WgDYWqT3mOKfaM2HCNac8gqWuuJetG0JtJFhI+Maox9vzVLjFPW
+4ClRtjRRLkEPk3MfQB63jiL3GlYZNsT81orvp8k6LyehxbWd8PlcBCXRs/TG6NTs
+mBOvS2w4DDBvi6JwGasTlrPTqMVT17a3E7zC5Aw6gljOFREHCNEuJL1KHv0kL56a
+EZ3hdrv3D9/b1aSN7JAP9xxuqCj6+QhwvTVxl6iKFXUT/p4CkCQ6w+AghYqcojFi
+lf5gTS62Dza2wwuzILT6u2ns/23+fGZeXSFp35aTlnGflOP8qHG+gJmznWr1d5co
+q2JAycFPFM8ttcv9nYJ/8xPLhl4/hOM7Vxs4TbkZmvSXrzQaAh8RfjlDR5k5Gg==
+-----END CERTIFICATE-----
+`,
+		"fullchain.pem": `-----BEGIN CERTIFICATE-----
+MIIDtjCCAZ4CCQDf6RF34BgW+DANBgkqhkiG9w0BAQsFADAfMR0wGwYDVQQDDBRU
+ZXN0IEludGVybWVkaWF0ZSBDQTAeFw0yNTA2MjMxNjMwMzNaFw0yNjA2MjMxNjMw
+MzNaMBsxGTAXBgNVBAMMEHRlc3QuZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDa2gXF2qNmvoV+h4RxUA0DZ+daAXbefG+xney1ZEmF
++r2jmW2eMKazB8xYoR8pcGF7jtURZ397vkHEpkwppleWGxcxbdkB/l7SBM4Fe/u1
+ccaCq4Fa+cuvZxkxS/02kA9i11UVFqwgj8tJLOnUTlOtSyHw77QC7C6N0rYUIV1b
+PBe8egaJBoVZtgAb705THdvl0ERkXK7NX8M2jB804UMBEtamEWibOJcIG2I0IWqb
+yMwyyukm/7+9nuun5A47HWRew2V3h/Wzpwe37qgtAWEWR7/B7gGlURKzXtEx94AB
+Voz+Sg6iHNqaOKEq1qqXa9J5ui9jUtNZkjnTDJdhZHDPAgMBAAEwDQYJKoZIhvcN
+AQELBQADggIBAEuxqCNCyPjZHwAaVnHliVb5qVxjTAxi7+zDKZddfQ7xcVh3j62x
+zBImwiM963fc0SSEUL4WAHGITspujH2saiV5DQQdTraemwlkrbRootwUmFAb8hpl
+iUOMeit6rlVhr3AOI2HMCuDyWXLVrZM83IcqwwQjS+ubIO+wzxTxx9s4SCSjkdeO
+EN8B0B8E1tt8QKM9b7zhxoiham9bRnY7iLXKVk9S+6nPkordx2oeueoRwQfmNyS2
+nkDviymZBGfSr8YQf7r+OqwtwoaH6rnpIA/JliKtXA/zAP5hfEoQQXaPpfZBl27w
+n+mwCxKjiB1P0LccEiR1B0G9Jf36rlTiRCVSa4D6R8wXlVVM+2Dq4C9caM+6gDmr
+tKciwb4sQRRG6t+40frtPHOtxtdI4Qxjf3dVzWBkZwWTQXHGlFrUjbZg3EkhCOJu
+E5kOQCMPmIAUlWqEyiTIioGtY24lrh7BxYx1k8EgwaAl1M+3FbB6VnOSfYTJQ4Ub
+jAABlyp1bjJXvSAlJKrJRPpRl+EUWqa6cOuWgbzlQNQ4t8wlpmZXspTvXvCZ0d7l
+KiFnk+zGGr5K96ISGDN/cs8ZVG1GH5iv6JywfabhRRz0Llx7M/T1Kt9VVd1ncG8V
+h2qNvCOeriRzER6eEkxVfkFn9ihsTF1xhasGrOtT2jOgDxM+YyaZOTYG
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIEsjCCApoCCQCZOdzxuFNMWjANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxU
+ZXN0IFJvb3QgQ0EwHhcNMjUwNjIzMTYzMDMzWhcNMjYwNjIzMTYzMDMzWjAfMR0w
+GwYDVQQDDBRUZXN0IEludGVybWVkaWF0ZSBDQTCCAiIwDQYJKoZIhvcNAQEBBQAD
+ggIPADCCAgoCggIBAPDURPg5T+9gWDC8sdXeGo265VCy5lIcRIoXTn+RgXA0UB4+
+18wErnYZe+t38EPKuyOHAYA7WQpcDc1/DtPtQe4Z2LLiSn74BGZfHJytPiYq2+rG
+drDOJcJ6x3oznZImBffvcGEAS9U0KUAcnpablMeZdu6kqhNxujjm5hEff1/A9fOi
+81r/mThyfMiM6nzCtC486rMGJNDFa3LdqB4ThhVERaQma6J5ZV5hCbQMpkl9Me6Q
+xnzK7H8jrGK7d2S9W08ogFxkugbtggpsecqXtKHXiZZ7hFAZI6ZtFgY8VS0Rx1yG
+DwrbIH0/GDayVY4I2PqyHD0M9m8oCjGFowW5PiPj7rt+dKprze2dH/SqXUFa8VY8
+w7Hoe5mjxyBTU/Iift9lErheLncX6e8nwRGMwEqCJLrnY1tzBss3vS2xF9EoV4IT
+9JxdUsAITaVub1S0proNv9AA55A05a25am37NEA3Hx/utHDTcCLoaiLpeM4Wy4wk
+V4a8Z7zUsvbcCL3I978gsN44xd7OYPqS/i+mBi+KuwMOA6dnEjPDdUlzcivY8jdx
+YE0+u9FJJGqxV7XmeTBHVtYLFmIiNfhfPwREvGC9P2OiqDh7hLyDmejLmpKAnB3M
+D6ylxgIBCPAQBXCm+Zq7rCQ+jpWciY0POIdNdJURzV6vMpW8BvcPZFx/LWSnAgMB
+AAEwDQYJKoZIhvcNAQELBQADggIBAEgACd5r0TORai2/tAOFtwchqPWDvBI2eZPk
+o5AVGcF42CrThFlXmNtH28IYKbsgoGmGrbHkiQxjWBWZ7pTe4bvJH/bxkuvAU2BG
+XJy/TABOhp7EMtpfzzr5dgw0w85GjIRQnmvx9f/nZah1gB6D3K0ESrLG1fvhIef8
+f04JBn/9zJLo1SEdFNiL+mRVSaudAJmQCqJ/9axwbvRvbfvqm7TS+mBHxihLx6mO
+KfiSB+8fYTDe/LiBrDdCWf4t8POvC3G2ONufhPMh2YrvrUETeduq6SOoXimUORa8
+mplAnGbbTDFjsWDUvNA7dGye7VrPHfalwAMeiU4M9JgP74rDXJWC2LSqldiLucNu
+gS1gjWlALy3walTLJov04mVjgOiLQZd8Tdg0McQgrs7chuw3IXU6zsFVDLz3reNb
+U/FCa53pVQdF2Vbm5tAOySXx2iJyFsz/5CB2B8JwQCkMkBBVjYK8cKdse8MqVXiS
+6lrDI+5Nv5F6ypaMJIp/Yu/OGny1rQ63kdkXt5QKWUvyA8+D16qrhwuDz9SgrfAT
+kJ3DvedIWo+KdYsd0QDtPwtTr+EVzUy7awBoAct96pH+6fke6sCQ5WsjDHH2qmK/
+l6QWRWwEvRWYW8DZuRCDacz1fE5qjdV7WZqGY/KZXz5k2EHu3w43bjrt3vGf70g1
+9IoG5MUz
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIEqjCCApICCQC6g1guHObsqjANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxU
+ZXN0IFJvb3QgQ0EwHhcNMjUwNjIzMTYzMDMzWhcNMjYwNjIzMTYzMDMzWjAXMRUw
+EwYDVQQDDAxUZXN0IFJvb3QgQ0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+AoICAQDL06pL1SsS+bflaz4/wKXfMakbEmFW7TFVZUptrTmAWw7LMx7oRv5lhZ+E
+LtKUrtpZmVbCqCGRxbibY5trCM58gnSnpj8BD9PM87qAoQJdE2DqfhPVHER/h7ZE
+cBsIcOYybgfFxoa07Wj8rSmYXIuPl0USb1v2wqzOluKotV/E3bw8yAfoZbdi/B7X
+WhiGHrattK0uWx+e49ORzhTYeYawTajnPhY3o0a3EnIug9g5+f83u+WYSDPPV+af
+y1hvukX3nZDBqLluiHbR3s+oD75BeqxUAi045vS2CmM9E0iGiTt20YsoZIwi+pbJ
+WabVkFF11TLz81q0AnxmtaejDb1e1R/lJ83yUe05LL4dD4FfE/VdgbGs3CmUxELT
+i+2heUWqw/7vF900uEHr1b1aN2whcMx9a1gy7hJI6KNhC75o1voGiVPV3HnYNjQ1
+ZINQqijzwT4nyEWxrgICvzZlt2L46ifKu0sbRYnxVeE1sG+Pqbo8rAn3tyexI955
+bpEUd8h2/XLs/izc90rNTbvsjVAxoHBcfSOA3HJ7D9/MjY5JsgmbcWIcfTzkFj/W
+DVYLrI2//0iK/589KfF1psfuqKMKvGiIBi3JUgDm95EMFDbWJXBGn1HJZ667ZrSH
+1J1We5FQ5DlaPFcuhye3PE2XlqcncMoNPwIlMGVoR7QZ3NZCKQIDAQABMA0GCSqG
+SIb3DQEBCwUAA4ICAQBYLW8spbVwA11hwXCi+v7JywepxtKLdCsPpjfm8ewHMG/j
+EMePY673gfONv4S5Pwk5ERoNy4W/n5m0S6t0tmtVivezeVT/ReU/tpKuj7iZhOEq
+tSNdL6mMU3FFnIZRXohfxeQqX+BP5g90AuPyQ5F7pCE1YDJOFn/Aadj3vWXQ+XQA
+V+yAk9OOfgqAhreXI3fu1VtuaJhmv9Ig1GhvFtmiW19knPmjzGWKugB0l9gJiPXZ
+CTqOTEsyTJIQbiGzGlo/hn9xoFC7nTw8vSIhrfsp9+pDA3HTo/zERwShsyNJky8g
+pvYdCVB2faP/4WgDYWqT3mOKfaM2HCNac8gqWuuJetG0JtJFhI+Maox9vzVLjFPW
+4ClRtjRRLkEPk3MfQB63jiL3GlYZNsT81orvp8k6LyehxbWd8PlcBCXRs/TG6NTs
+mBOvS2w4DDBvi6JwGasTlrPTqMVT17a3E7zC5Aw6gljOFREHCNEuJL1KHv0kL56a
+EZ3hdrv3D9/b1aSN7JAP9xxuqCj6+QhwvTVxl6iKFXUT/p4CkCQ6w+AghYqcojFi
+lf5gTS62Dza2wwuzILT6u2ns/23+fGZeXSFp35aTlnGflOP8qHG+gJmznWr1d5co
+q2JAycFPFM8ttcv9nYJ/8xPLhl4/hOM7Vxs4TbkZmvSXrzQaAh8RfjlDR5k5Gg==
+-----END CERTIFICATE-----
+`,
 	}
 
 	for filename, content := range certFiles {
-		err := os.WriteFile(filepath.Join(tempDir, filename), []byte(content), 0644)
-		assert.NoError(t, err)
+		err = os.WriteFile(filepath.Join(certDir, "test.example.com", filename), []byte(content), 0600)
+		require.NoError(t, err)
 	}
 
 	plugin := &OpensslPlugin{
@@ -81,29 +266,18 @@ func TestOpensslPlugin_GetMetadata_ValidDirectory(t *testing.T) {
 			Domain: "test.example.com",
 		},
 		DehydratedConfig: &proto.DehydratedConfig{
-			CertDir: tempDir,
+			CertDir: certDir,
 		},
 	}
 
 	resp, err := plugin.GetMetadata(context.Background(), req)
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	// Note: The actual metadata content will depend on the test certificate data
-}
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Empty(t, resp.GetError())
 
-func TestToMap(t *testing.T) {
-	type testStruct struct {
-		Name  string `json:"name"`
-		Value int    `json:"value"`
-	}
+	m := proto.NewMetadata()
+	m.FromProto("test.example.com", resp.Metadata)
 
-	input := testStruct{
-		Name:  "test",
-		Value: 42,
-	}
-
-	result, err := toMap(input)
-	assert.NoError(t, err)
-	assert.Equal(t, "test", result["name"])
-	assert.Equal(t, float64(42), result["value"]) // JSON numbers are float64
+	require.NotNil(t, m.Get("test.example.com"))
+	require.Empty(t, m.GetError())
 }

@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewCertificate_ValidCertificate(t *testing.T) {
 	// Create a temporary file with a valid certificate
 	tempDir, err := os.MkdirTemp("", "test-certs")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	certPath := filepath.Join(tempDir, "test.crt")
@@ -22,34 +22,34 @@ MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
 NMoSfm76oqFvAp8Gy0iz5sxjZmSnXyCdPEovGhLa0VzMaQ8s+CLOyS56YyCFGeJZ
 -----END CERTIFICATE-----`
 
-	err = os.WriteFile(certPath, []byte(certContent), 0644)
-	assert.NoError(t, err)
+	err = os.WriteFile(certPath, []byte(certContent), 0600)
+	require.NoError(t, err)
 
 	cert := NewCertificate(certPath)
-	assert.NotNil(t, cert)
-	assert.Equal(t, certPath, cert.File)
+	require.NotNil(t, cert)
+	require.Equal(t, certPath, cert.File)
 	// Note: The actual subject/issuer values will depend on the test certificate data
 }
 
 func TestNewCertificate_NonExistentFile(t *testing.T) {
 	cert := NewCertificate("nonexistent.crt")
-	assert.NotNil(t, cert)
-	assert.Contains(t, cert.Error, "failed to read")
+	require.NotNil(t, cert)
+	require.Contains(t, cert.Error, "failed to read")
 }
 
 func TestNewCertificate_InvalidCertificate(t *testing.T) {
 	// Create a temporary file with invalid content
 	tempDir, err := os.MkdirTemp("", "test-certs")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
 	certPath := filepath.Join(tempDir, "invalid.crt")
-	err = os.WriteFile(certPath, []byte("invalid content"), 0644)
-	assert.NoError(t, err)
+	err = os.WriteFile(certPath, []byte("invalid content"), 0600)
+	require.NoError(t, err)
 
 	cert := NewCertificate(certPath)
-	assert.NotNil(t, cert)
-	assert.Contains(t, cert.Error, "failed to decode PEM block")
+	require.NotNil(t, cert)
+	require.Contains(t, cert.Error, "failed to decode PEM block")
 }
 
 func TestCertificate_Analyze(t *testing.T) {
@@ -58,8 +58,8 @@ func TestCertificate_Analyze(t *testing.T) {
 	}
 
 	err := cert.analyze()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to read")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to read")
 }
 
 func TestCertificate_JSONTags(t *testing.T) {
@@ -73,10 +73,10 @@ func TestCertificate_JSONTags(t *testing.T) {
 	}
 
 	// Verify that all fields have proper JSON tags
-	assert.NotEmpty(t, cert.File)
-	assert.NotEmpty(t, cert.Subject)
-	assert.NotEmpty(t, cert.Issuer)
-	assert.False(t, cert.NotBefore.IsZero())
-	assert.False(t, cert.NotAfter.IsZero())
-	assert.NotEmpty(t, cert.Error)
+	require.NotEmpty(t, cert.File)
+	require.NotEmpty(t, cert.Subject)
+	require.NotEmpty(t, cert.Issuer)
+	require.False(t, cert.NotBefore.IsZero())
+	require.False(t, cert.NotAfter.IsZero())
+	require.NotEmpty(t, cert.Error)
 }

@@ -22,9 +22,9 @@ builds:
     ldflags:
       - -s -w
       - -X main.Version={{.Version}}
-      - -X main.Commit={{.Commit}}
+      - -X main.Commit={{.ShortCommit}}
       - -X main.BuildTime={{.Date}}
-    main: ./cmd/api
+    main: .
 
 archives:
   - format: tar.gz
