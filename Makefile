@@ -9,50 +9,50 @@ BINARY_NAME=dehydrated-api-metadata-plugin-openssl
 
 .PHONY: all build clean test deps tidy
 
-all: clean build
+all: clean build ## Clean and build the project
 
-build:
+build: ## Build the binary
 	$(GOBUILD) -o $(BINARY_NAME) -v
 
-clean:
+clean: ## Clean build artifacts
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 
-test:
+test: ## Run unit tests (excludes integration tests)
 	$(GOTEST) -v ./...
 
-test-integration:
+test-integration: ## Run integration tests (requires Netscaler instance)
 	$(GOTEST) -v -tags=integration ./...
 
-test-all: test test-integration
+test-all: test test-integration ## Run all tests
 
-deps:
+deps: ## Install dependencies
 	$(GOGET) -v ./...
 
-tidy:
+tidy: ## Tidy up dependencies
 	$(GOMOD) tidy
 
 # Development helpers
 .PHONY: lint fmt
 
-lint:
+lint: ## Run linter
 	golangci-lint run
 
-fmt:
+fmt: ## Format the code
 	$(GOCMD) fmt ./...
 
-# Help target
-.PHONY: help
-help:
-	@echo "Available targets:"
-	@echo "  all            - Clean and build the project"
-	@echo "  build          - Build the project"
-	@echo "  clean          - Clean build artifacts"
-	@echo "  test           - Run unit tests (excludes integration tests)"
-	@echo "  test-integration - Run integration tests (requires Netscaler instance)"
-	@echo "  test-all       - Run both unit and integration tests"
-	@echo "  deps           - Download dependencies"
-	@echo "  tidy           - Tidy up dependencies"
-	@echo "  lint           - Run linter"
-	@echo "  fmt            - Format code"
+release: ## Create a release with goreleaser
+	@goreleaser release --snapshot --clean
+
+#
+# Help
+#
+
+help: ## Display this help message
+	@echo "Usage: make [target]"
 	@echo ""
+	@echo "Targets:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "----------------------------------------"
+	@echo "For more information, see the README.md file."
