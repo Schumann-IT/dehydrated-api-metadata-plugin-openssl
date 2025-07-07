@@ -50,7 +50,7 @@ func TestOpensslPlugin_GetMetadata_NonExistentDirectory(t *testing.T) {
 
 	// Check for error in metadata
 	require.NotNil(t, resp.Error)
-	require.Contains(t, resp.Error, "domain directory does not exist")
+	require.Contains(t, resp.Metadata["error"].GetStringValue(), "domain directory does not exist")
 }
 
 func TestOpensslPlugin_GetMetadata_ValidDirectory(t *testing.T) {

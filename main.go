@@ -4,11 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/schumann-it/dehydrated-api-metadata-plugin-openssl/internal"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/schumann-it/dehydrated-api-metadata-plugin-openssl/internal"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"
@@ -52,7 +50,7 @@ func (p *OpensslPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataReq
 
 	// Check if the domain directory exists
 	if _, err := os.Stat(domainDir); os.IsNotExist(err) {
-		metadata.SetError(fmt.Sprintf("domain directory does not exist: %s", domainDir))
+		metadata.Set("error", fmt.Sprintf("domain directory does not exist: %s", domainDir))
 		return metadata.ToGetMetadataResponse()
 	}
 
@@ -64,7 +62,6 @@ func (p *OpensslPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataReq
 		"fullchain": "fullchain.pem",
 	}
 
-	var errs []string
 	for metadataKey, filename := range certFiles {
 		filePath := filepath.Join(domainDir, filename)
 		var value any
@@ -76,16 +73,7 @@ func (p *OpensslPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataReq
 			value = internal.NewCertificate(filePath)
 		}
 
-		err := metadata.SetMap(metadataKey, value)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to process %s: %v", filename, err))
-			continue
-		}
-	}
-
-	// Add errors to metadata if any occurred
-	if len(errs) > 0 {
-		metadata.SetError(strings.Join(errs, "; "))
+		_ = metadata.SetMap(metadataKey, value)
 	}
 
 	return metadata.ToGetMetadataResponse()
@@ -108,9 +96,10 @@ func main() {
 	}
 
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "openssl-plugin",
-		Level:  hclog.Trace,
-		Output: os.Stdout,
+		Name:       "openssl-plugin",
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
 	})
 
 	plugin := &OpensslPlugin{
