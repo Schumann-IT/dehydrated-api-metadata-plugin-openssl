@@ -4,9 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/schumann-it/dehydrated-api-metadata-plugin-openssl/internal"
 	"os"
 	"path/filepath"
+
+	"github.com/schumann-it/dehydrated-api-metadata-plugin-openssl/internal"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"

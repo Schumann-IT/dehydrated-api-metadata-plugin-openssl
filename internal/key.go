@@ -40,27 +40,56 @@ func (k *Key) analyze() error {
 		return fmt.Errorf("failed to read %s: %w", k.File, err)
 	}
 
-	block, _ := pem.Decode(data)
-	if block == nil {
-		return fmt.Errorf("failed to decode PEM block for %s", k.File)
+	// Parse all PEM blocks to find the actual key
+	var key any
+	var parseErr error
+
+	for rest := data; len(rest) > 0; {
+		block, remaining := pem.Decode(rest)
+		if block == nil {
+			break
+		}
+
+		// Skip EC PARAMETERS blocks
+		if block.Type == "EC PARAMETERS" {
+			rest = remaining
+			continue
+		}
+
+		// Try to parse the key
+		key, parseErr = x509.ParsePKCS8PrivateKey(block.Bytes)
+		if parseErr == nil {
+			break
+		}
+
+		key, parseErr = x509.ParsePKCS1PrivateKey(block.Bytes) // RSA fallback
+		if parseErr == nil {
+			break
+		}
+
+		key, parseErr = x509.ParseECPrivateKey(block.Bytes) // ECDSA fallback
+		if parseErr == nil {
+			break
+		}
+
+		rest = remaining
 	}
 
-	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		key, err = x509.ParsePKCS1PrivateKey(block.Bytes) // RSA fallback
-		if err != nil {
-			key, err = x509.ParseECPrivateKey(block.Bytes) // ECDSA fallback
-			if err != nil {
-				return fmt.Errorf("unknown key format or unsupported key type for %s", k.File)
-			}
-		}
+	if key == nil {
+		return fmt.Errorf("unknown key format or unsupported key type for %s", k.File)
 	}
 
 	switch r := key.(type) {
 	case *rsa.PrivateKey:
+		if r == nil {
+			return fmt.Errorf("parsed RSA key is nil for %s", k.File)
+		}
 		k.Type = "rsa"
 		k.Size = r.N.BitLen()
 	case *ecdsa.PrivateKey:
+		if r == nil {
+			return fmt.Errorf("parsed ECDSA key is nil for %s", k.File)
+		}
 		k.Type = "ecdsa"
 		k.Size = r.Curve.Params().BitSize
 	case ed25519.PrivateKey:
