@@ -11,7 +11,7 @@ BINARY_NAME=dehydrated-api-metadata-plugin-openssl
 
 all: clean build ## Clean and build the project
 
-pre-commit: test lint release ## Prepare for commit
+pre-commit: clean test lint release ## Prepare for commit
 
 build: ## Build the binary
 	$(GOBUILD) -o $(BINARY_NAME) -v

@@ -16,13 +16,15 @@ type Certificate struct {
 	Issuer    string    `json:"issuer,omitempty"`     // Certificate issuer DN
 	NotBefore time.Time `json:"not_before,omitempty"` // Start of validity period
 	NotAfter  time.Time `json:"not_after,omitempty"`  // End of validity period
+	DNSNames  []string  `json:"dns_names,omitempty"`  // List of DNS names associated with the certificate
 	Error     string    `json:"error,omitempty"`      // Error represents any error encountered during certificate analysis.
 }
 
 // NewCertificate creates a new Certificate instance from the provided file path and analyzes its metadata.
 func NewCertificate(file string) *Certificate {
 	c := &Certificate{
-		File: file,
+		File:     file,
+		DNSNames: []string{}, // Always initialize to empty slice
 	}
 	err := c.analyze()
 	if err != nil {
@@ -50,6 +52,10 @@ func (c *Certificate) analyze() error {
 	}
 
 	c.Subject = cert.Subject.String()
+	c.DNSNames = []string{}
+	if cert.DNSNames != nil {
+		c.DNSNames = cert.DNSNames
+	}
 	c.Issuer = cert.Issuer.String()
 	c.NotBefore = cert.NotBefore
 	c.NotAfter = cert.NotAfter
